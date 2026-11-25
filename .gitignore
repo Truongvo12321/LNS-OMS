@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# sqlite dev db
+prisma/*.db*
+
+# mẫu biến môi trường (không chứa bí mật)
+!.env.example

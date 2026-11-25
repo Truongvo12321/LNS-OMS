@@ -1,36 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LNS OMS – MVP 1.0
 
-## Getting Started
+Order Management System for a food wholesaler: orders, invoices, inventory ledger, purchase orders, dashboard.
+The full report (in Vietnamese) is in [docs/BAO_CAO.md](docs/BAO_CAO.md).
 
-First, run the development server:
+## Run locally (SQLite)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run db:reset   # create schema + seed demo data
+npm run dev        # http://localhost:3000, log in with admin@demo.vn / sales@demo.vn / kho@demo.vn, password 123456
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> Windows: run from a path whose drive letter is uppercase (`D:\...`). If it is lowercase (`d:\...`), Next loads React twice and the build fails.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy (Vercel + Postgres)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Create a free Postgres database on Supabase or Neon and copy its connection string.
+2. In `prisma/schema.prisma`, change `provider = "sqlite"` to `provider = "postgresql"`.
+3. Push the code to GitHub, import it into Vercel, and set the `DATABASE_URL` and `JWT_SECRET` (at least 32 random characters) env vars.
+4. Locally, with `DATABASE_URL` pointing at that database, run `npm run db:reset` to create the tables and seed the data.

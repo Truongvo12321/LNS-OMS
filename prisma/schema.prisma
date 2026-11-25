@@ -1,0 +1,179 @@
+// Dev: SQLite. Deploy: đổi provider = "postgresql" + DATABASE_URL của Supabase/Neon.
+// Không dùng enum để schema chạy được trên cả SQLite và Postgres; giá trị hợp lệ ghi ở comment.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int             @id @default(autoincrement())
+  name      String
+  email     String          @unique
+  passwordHash String       @default("") // scrypt "salt:hash"
+  roleId    Int
+  role      Role            @relation(fields: [roleId], references: [id])
+  deletedAt DateTime? // xóa mềm = vô hiệu hóa tài khoản
+  orders    Order[]
+  movements StockMovement[]
+  slipsCreated  StockSlip[] @relation("SlipCreator")
+  slipsApproved StockSlip[] @relation("SlipApprover")
+}
+
+/// Vai trò = tập quyền; gán vai trò cho user. isAdmin = toàn quyền (không chỉnh / xóa được).
+model Role {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  permissions String    @default("") // danh sách quyền, phân tách bằng dấu phẩy – xem src/lib/perms.ts
+  isAdmin     Boolean   @default(false)
+  deletedAt   DateTime?
+  users       User[]
+}
+
+model Channel {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  type      String // WHOLESALE | ECOMMERCE
+  customers Customer[]
+  orders    Order[]
+}
+
+model Customer {
+  id        Int     @id @default(autoincrement())
+  name      String
+  phone     String?
+  address   String? // Ship to – địa chỉ giao hàng
+  billAddress String? // Bill to – bỏ trống = giống địa chỉ giao hàng
+  channelId Int
+  channel   Channel @relation(fields: [channelId], references: [id])
+  orders    Order[]
+  deletedAt DateTime? // xóa mềm: != null nghĩa là đã xóa
+}
+
+model Product {
+  id             Int                 @id @default(autoincrement())
+  code           String              @unique
+  name           String
+  brand          String?
+  spec           String? // quy cách, vd "320ML x 24"
+  nameVi         String? // tên tiếng Việt in trên catalogue
+  marketSku      String? // mã hàng trên sàn (Walmart Item Number / SKU) – in ra hoá đơn
+  image          Bytes? // ảnh sản phẩm tải lên (JPEG/PNG/WebP ≤ 2MB) – lưu trong DB để deploy không mất file
+  imageType      String? // MIME của ảnh
+  imageVer       Int                 @default(0) // tăng mỗi lần đổi ảnh → URL mới, phá cache trình duyệt
+  unitsPerCarton Int                 @default(1)
+  wholesalePrice Int // cent / carton
+  retailPrice    Int // cent / carton
+  minStock       Int                 @default(0) // carton
+  orderItems     OrderItem[]
+  movements      StockMovement[]
+  poItems        PurchaseOrderItem[]
+  slipLines      StockSlipLine[]
+  deletedAt DateTime? // xóa mềm: != null nghĩa là đã xóa
+}
+
+model Order {
+  id          Int             @id @default(autoincrement())
+  code        String          @unique
+  customerId  Int
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  channelId   Int
+  channel     Channel         @relation(fields: [channelId], references: [id])
+  status      String          @default("DRAFT") // DRAFT | CONFIRMED | DELIVERED | CANCELLED
+  externalRef String? // mã đơn trên sàn (Order#)
+  poNumber    String? // Purchase order# trên sàn
+  shipBy      DateTime? // hạn giao (Ship by)
+  shipMethod  String? // Standard / Express…
+  carrier     String? // hãng vận chuyển
+  note        String?
+  total       Int             @default(0) // cent
+  createdById Int?
+  createdBy   User?           @relation(fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  items       OrderItem[]
+  movements   StockMovement[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Int // cent, chụp lại giá tại thời điểm bán
+}
+
+// Tồn kho = SUM(qty) theo product. qty có dấu: IN dương, OUT/DAMAGED âm. Không có cột "tồn" để sửa tay.
+model StockMovement {
+  id              Int            @id @default(autoincrement())
+  productId       Int
+  product         Product        @relation(fields: [productId], references: [id])
+  type            String // IN | OUT | DAMAGED | RETURN
+  qty             Int // thùng (âm = xuất)
+  units           Int            @default(0) // đơn vị lẻ (âm = xuất lẻ)
+  slipId          Int?
+  slip            StockSlip?     @relation(fields: [slipId], references: [id])
+  orderId         Int?
+  order           Order?         @relation(fields: [orderId], references: [id])
+  purchaseOrderId Int?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  note            String?
+  createdById     Int?
+  createdBy       User?          @relation(fields: [createdById], references: [id])
+  createdAt       DateTime       @default(now())
+}
+
+model PurchaseOrder {
+  id         Int                 @id @default(autoincrement())
+  code       String              @unique
+  supplier   String?
+  status     String              @default("DRAFT") // DRAFT | ORDERED | RECEIVED | CANCELLED
+  createdAt  DateTime            @default(now())
+  receivedAt DateTime?
+  items      PurchaseOrderItem[]
+  movements  StockMovement[]
+}
+
+model PurchaseOrderItem {
+  id              Int           @id @default(autoincrement())
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       Int
+  product         Product       @relation(fields: [productId], references: [id])
+  qty             Int
+  deletedAt DateTime? // xóa mềm: != null nghĩa là đã xóa
+}
+
+/// Phiếu nhập / xuất kho nhiều dòng (theo mẫu INVENTORY IN/OUT MONITOR). Chỉ khi DUYỆT mới ghi StockMovement.
+model StockSlip {
+  id           Int             @id @default(autoincrement())
+  code         String          @unique
+  type         String // IN | OUT | DAMAGED
+  status       String          @default("PENDING") // PENDING | APPROVED | REJECTED
+  date         DateTime        @default(now())
+  note         String?
+  createdById  Int?
+  createdBy    User?           @relation("SlipCreator", fields: [createdById], references: [id])
+  approvedById Int?
+  approvedBy   User?           @relation("SlipApprover", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  lines        StockSlipLine[]
+  movements    StockMovement[]
+}
+
+model StockSlipLine {
+  id        Int       @id @default(autoincrement())
+  slipId    Int
+  slip      StockSlip @relation(fields: [slipId], references: [id])
+  productId Int
+  product   Product   @relation(fields: [productId], references: [id])
+  pallets   Int       @default(0) // chỉ để ghi nhận (nhập)
+  cartons   Int       @default(0)
+  units     Int       @default(0) // đơn vị lẻ (xuất lẻ)
+}
