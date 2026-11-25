@@ -9,17 +9,17 @@ const int = (v: string | null) => Number(v) || undefined;
 const LISTS: Record<string, (q: Q, skip: number, take: number) => Promise<[unknown[], number]>> = {
   async orders(q, skip, take) {
     const s = q.get("q");
-    const where = { status: q.get("status") || undefined, channelId: int(q.get("channelId")), ...(s && { OR: [{ code: { contains: s } }, { externalRef: { contains: s } }, { customer: { name: { contains: s } } }] }) };
+    const where = { status: q.get("status") || undefined, channelId: int(q.get("channelId")), ...(s && { OR: [{ code: { contains: s, mode: "insensitive" as const } }, { externalRef: { contains: s, mode: "insensitive" as const } }, { customer: { name: { contains: s, mode: "insensitive" as const } } }] }) };
     return Promise.all([db.order.findMany({ where, include: { customer: true, channel: true }, orderBy: { id: "desc" }, skip, take }), db.order.count({ where })]);
   },
   async customers(q, skip, take) {
     const s = q.get("q");
-    const where = { ...alive, channelId: int(q.get("channelId")), ...(s && { OR: [{ name: { contains: s } }, { phone: { contains: s } }] }) };
+    const where = { ...alive, channelId: int(q.get("channelId")), ...(s && { OR: [{ name: { contains: s, mode: "insensitive" as const } }, { phone: { contains: s, mode: "insensitive" as const } }] }) };
     return Promise.all([db.customer.findMany({ where, include: { channel: true, _count: { select: { orders: true } } }, orderBy: { name: "asc" }, skip, take }), db.customer.count({ where })]);
   },
   async products(q, skip, take) {
     const s = q.get("q");
-    const where = { ...alive, ...(s && { OR: [{ code: { contains: s } }, { name: { contains: s } }, { nameVi: { contains: s } }, { marketSku: { contains: s } }] }) };
+    const where = { ...alive, ...(s && { OR: [{ code: { contains: s, mode: "insensitive" as const } }, { name: { contains: s, mode: "insensitive" as const } }, { nameVi: { contains: s, mode: "insensitive" as const } }, { marketSku: { contains: s, mode: "insensitive" as const } }] }) };
     const [rows, total, stock] = await Promise.all([db.product.findMany({ where, orderBy: { code: "asc" }, skip, take }), db.product.count({ where }), stockDetail()]);
     return [rows.map((p) => ({ ...p, stock: stock.get(p.id)?.cartons ?? 0, loose: stock.get(p.id)?.loose ?? 0 })), total];
   },
@@ -30,7 +30,7 @@ const LISTS: Record<string, (q: Q, skip: number, take: number) => Promise<[unkno
   },
   async users(q, skip, take) {
     const s = q.get("q");
-    const where = { ...alive, roleId: int(q.get("roleId")), ...(s && { OR: [{ name: { contains: s } }, { email: { contains: s } }] }) };
+    const where = { ...alive, roleId: int(q.get("roleId")), ...(s && { OR: [{ name: { contains: s, mode: "insensitive" as const } }, { email: { contains: s, mode: "insensitive" as const } }] }) };
     return Promise.all([db.user.findMany({ where, select: { id: true, name: true, email: true, role: { select: { id: true, name: true, isAdmin: true } } }, orderBy: { id: "asc" }, skip, take }), db.user.count({ where })]);
   },
   async roles(q, skip, take) {

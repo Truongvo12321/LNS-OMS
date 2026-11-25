@@ -33,6 +33,8 @@ const products = [
 
 async function main() {
   await db.stockMovement.deleteMany();
+  await db.stockSlipLine.deleteMany();
+  await db.stockSlip.deleteMany();
   await db.purchaseOrderItem.deleteMany();
   await db.purchaseOrder.deleteMany();
   await db.orderItem.deleteMany();

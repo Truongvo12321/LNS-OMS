@@ -1,12 +1,13 @@
-// Dev: SQLite. Deploy: đổi provider = "postgresql" + DATABASE_URL của Supabase/Neon.
+// PostgreSQL trên Neon. Biến môi trường lấy bằng `neon env pull` (DATABASE_URL + DATABASE_URL_UNPOOLED).
 // Không dùng enum để schema chạy được trên cả SQLite và Postgres; giá trị hợp lệ ghi ở comment.
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Neon pooled (-pooler) – truy vấn của app
+  directUrl = env("DATABASE_URL_UNPOOLED") // Neon direct – prisma db push / migrate
 }
 
 model User {
