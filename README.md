@@ -3,6 +3,8 @@
 Order Management System for a food wholesaler: orders, invoices, inventory ledger, purchase orders, dashboard.
 The full report (in Vietnamese) is in [docs/BAO_CAO.md](docs/BAO_CAO.md).
 
+**Live demo:** https://lns-oms.vercel.app (admin@demo.vn / sales@demo.vn / kho@demo.vn, password `123456`)
+
 ## Run locally
 
 ```bash

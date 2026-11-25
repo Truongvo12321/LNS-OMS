@@ -1,7 +1,7 @@
 # Báo cáo dự án – LNS OMS (MVP 1.0)
 
 **Ứng viên:** Trường Võ · **Vị trí:** Intern SWE 2026 – Sondoong Labs
-**Demo:** `<link Vercel – cập nhật sau khi deploy>` · **Source:** `<link GitHub – cập nhật sau khi push>`
+**Demo:** https://lns-oms.vercel.app · **Source:** https://github.com/Truongvo12321/LNS-OMS
 
 **Tài khoản demo** (mật khẩu chung `123456`):
 
@@ -134,7 +134,7 @@ Ghi chú:
 | Thành phần | Chọn | Lý do |
 |---|---|---|
 | Framework | **Next.js 15 (App Router) + TypeScript** | Một codebase cho cả UI và backend (Server Components + Server Actions + Route Handlers), không phải dựng API riêng. Type-safe từ DB lên UI. |
-| ORM / DB | **Prisma + PostgreSQL** (dev: SQLite) | Dữ liệu ERP là dữ liệu quan hệ và cần transaction (xác nhận đơn + trừ kho, duyệt phiếu + ghi kho phải nguyên tử). Schema Prisma chính là ERD. |
+| ORM / DB | **Prisma + PostgreSQL trên Neon** (gói miễn phí) | Dữ liệu ERP là dữ liệu quan hệ và cần transaction (xác nhận đơn + trừ kho, duyệt phiếu + ghi kho phải nguyên tử). Schema Prisma chính là ERD. |
 | Gọi dữ liệu danh sách | **TanStack Query** + API `GET /api/<resource>` | Cache, giữ dữ liệu cũ khi chuyển trang (không nháy), tự làm mới sau khi lưu. Bộ lọc và phân trang nằm trên URL nên tải lại trang hay gửi link vẫn giữ nguyên. |
 | Xác thực | **JWT HS256 trong cookie httpOnly**, mật khẩu băm **scrypt** | Viết bằng `node:crypto`, không thêm thư viện. Quyền đọc lại từ DB mỗi request nên đổi vai trò có hiệu lực ngay. |
 | UI | **Tailwind CSS v4** | Làm nhanh; giao diện dạng bảng / sổ sách phù hợp người dùng quen Excel; responsive tới điện thoại. |
